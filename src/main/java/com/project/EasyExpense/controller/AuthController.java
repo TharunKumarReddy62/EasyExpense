@@ -5,6 +5,7 @@ import com.project.EasyExpense.dto.request.SignupRequest;
 import com.project.EasyExpense.dto.response.LoginResponse;
 import com.project.EasyExpense.dto.response.UserResponse;
 import com.project.EasyExpense.model.User;
+import com.project.EasyExpense.security.JwtService;
 import com.project.EasyExpense.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,12 +15,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
     private final AuthService authService;
+    private final JwtService jwtService;
+    public AuthController(
+            AuthService authService,
+            JwtService jwtService) {
 
-    public AuthController(AuthService authService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
+
 
     @PostMapping("/signup")
     public ResponseEntity<UserResponse> signup(
@@ -53,10 +58,19 @@ public class AuthController {
                 request.getPassword()
         );
 
+        String token = jwtService.generateToken(
+                org.springframework.security.core.userdetails.User
+                        .withUsername(user.getEmail())
+                        .password(user.getPassword())
+                        .authorities("USER")
+                        .build()
+        );
+
         LoginResponse response = LoginResponse.builder()
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .token(token)
                 .build();
 
         return ResponseEntity.ok(response);
